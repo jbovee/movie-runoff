@@ -68,6 +68,13 @@ class Runoff:
     def print_ballots(self):
         for ballot in self.ballots:
             print(ballot.votes)
+    
+    def reorder_ballots(self):
+        for ballot in self.ballots:
+            orderedVotes = sorted(ballot.votes)
+            for i,v in enumerate(orderedVotes):
+                idxToSwap = ballot.votes.index(v)
+                ballot.votes[idxToSwap] = i + 1
 
     
     def runoff(self):
