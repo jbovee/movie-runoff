@@ -27,9 +27,9 @@ class Runoff:
         zipname = zipcsv.namelist()[0]
         with io.StringIO(zipcsv.read(zipname).decode('utf-8')) as csvfile:
             reader = csv.reader(csvfile)
-            self.movies = [re.search(r'\[(.+)\]', header).group(1) for header in reader.__next__()[1:-1]]
+            self.movies = [re.search(r'\[(.+)\]', header).group(1) for header in reader.__next__()[2:]]
             for ballot in list(reader):
-                self.ballots.append(Ballot(ballot[-1],[int(val) if val != '' else -1 for val in ballot[1:-1]]))
+                self.ballots.append(Ballot(ballot[1],[int(val) if val != '' else -1 for val in ballot[2:]]))
     
     def count_num_votes_for_movie(self,voteNum,movieIndex):
         return sum([1 for ballot in self.ballots if ballot.votes[movieIndex] == voteNum])
