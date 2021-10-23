@@ -43,6 +43,7 @@ class Runoff:
                 self.shift_first_votes(s)
                 if reorder:
                     self.maxVote -= 1
+                    self.reorder_ballots()
                 e -= 1
             else:
                 s += 1
