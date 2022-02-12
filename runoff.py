@@ -129,6 +129,7 @@ class Runoff:
 def main():
     parser = argparse.ArgumentParser(description='Perform runoff vote calculations for movie night')
     parser.add_argument('-f','--full',help='calculate all six types of ballot (all, all reorder, slot 1, slot 1 reorder, slot 2, slot 2 reorder) at once',action='store_true')
+    parser.add_argument('-q','--quiet',help='ignore all print statements except the one for the winner',action='store_true')
     parser.add_argument('-s','--slot',help='0 = all ballots, 1 = first slot only, 2 = second slot only',type=int, default=0)
     parser.add_argument('-r','--reorder_votes',help='after a movie is removed, reorder the ballot votes to the lowest possible numbers (i.e. [1,2,4,5,7] -> [1,2,3,4,5])',action='store_true')
     args = parser.parse_args()
@@ -138,32 +139,32 @@ def main():
     filepath = askopenfilename()
     if (args.full):
         print(f'~~~~~ All Ballots ~~~~~')
-        allRunoff = Runoff(filepath,True)
+        allRunoff = Runoff(filepath,args.quiet)
         allRunoff.runoff(0,False)
 
         print(f'~~~~~ All Ballots Reordered ~~~~~')
-        allRunoffReorder = Runoff(filepath,True)
+        allRunoffReorder = Runoff(filepath,args.quiet)
         allRunoffReorder.runoff(0,True)
 
         print(f'~~~~~ First Slot Ballots ~~~~~')
-        firstSlot = Runoff(filepath,True)
+        firstSlot = Runoff(filepath,args.quiet)
         firstSlot.runoff(1,False)
 
         print(f'~~~~~ First Slot Ballots Reordered ~~~~~')
-        firstSlotReorder = Runoff(filepath,True)
+        firstSlotReorder = Runoff(filepath,args.quiet)
         firstSlotReorder.runoff(1,True)
 
         print(f'~~~~~ Second Slot Ballots ~~~~~')
-        secondSlot = Runoff(filepath,True)
+        secondSlot = Runoff(filepath,args.quiet)
         secondSlot.runoff(2,False)
 
         print(f'~~~~~ Second Slot Ballots Reordered ~~~~~')
-        secondSlotReorder = Runoff(filepath,True)
+        secondSlotReorder = Runoff(filepath,args.quiet)
         secondSlotReorder.runoff(2,True)
     else:
         slotPrint = "All" if args.slot == 0 else "First Slot" if args.slot == 1 else "Second Slot"
         print(f'\n~~~~~ Calculating Runoff for {slotPrint} Ballots ~~~~~')
-        r = Runoff(filepath,False)
+        r = Runoff(filepath,args.quiet)
         r.runoff(args.slot,args.reorder_votes)
         print(f'~~~~~ Finished {slotPrint} Ballots ~~~~~')
 
