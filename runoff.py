@@ -15,12 +15,14 @@ class Ballot:
         self.votes = votes
 
 class Runoff:
-    def __init__(self, filepath):
+    def __init__(self, filepath, quiet):
         self.lowest = 0
         self.movies = []
         self.ballots = []
         self.parseFile(filepath)
         self.maxVote = len(self.movies)
+        self.quiet = quiet
+        self.tie = False
     
     def parseFile(self, filepath):
         zipcsv = ZipFile(filepath)
@@ -39,7 +41,8 @@ class Runoff:
         e = len(self.movies)
         while(s < e):
             if self.count_num_votes_for_movie(1,s) == 0:
-                print(f'{self.movies[s]} dropped.')
+                if not self.quiet:
+                    print(f'{self.movies[s]} dropped.')
                 self.shift_first_votes(s)
                 if reorder:
                     self.maxVote -= 1
@@ -86,38 +89,46 @@ class Runoff:
             self.ballots = [ballot for ballot in self.ballots if ballot.slot == 1]
         elif slot == 2:
             self.ballots = [ballot for ballot in self.ballots if ballot.slot == 2]
-        self.print_movies()
-        self.print_ballots()
-        print('Dropping movies with no 1 votes')
-        self.drop_movies_with_no_first_votes(reorder)
-        while(len(self.movies) > 1):
-            print()
+        if not self.quiet:
             self.print_movies()
             self.print_ballots()
+            print('Dropping movies with no 1 votes')
+        self.drop_movies_with_no_first_votes(reorder)
+        while(len(self.movies) > 1):
+            if not self.quiet:
+                print()
+                self.print_movies()
+                self.print_ballots()
             indicesToCheck = list(range(len(self.movies)))
             for vote in range(1,self.maxVote+1):
                 indicesToCheck = self.get_movie_indices_with_lowest_count_of_vote(indicesToCheck,vote)
                 if len(indicesToCheck) == 1:
-                    print(f'Dropping {self.movies[indicesToCheck[0]]}; least {vote} votes')
+                    if not self.quiet:
+                        print(f'Dropping {self.movies[indicesToCheck[0]]}; least {vote} votes')
                     self.shift_first_votes(indicesToCheck[0])
                     if reorder:
                         self.maxVote -= 1
                         self.reorder_ballots()
                     break
                 else:
-                    print(f'Tie for least {vote} votes; {", ".join([self.movies[idx] for idx in indicesToCheck])}')
+                    if not self.quiet:
+                        print(f'Tie for least {vote} votes; {", ".join([self.movies[idx] for idx in indicesToCheck])}')
                 if vote == self.maxVote:
-                    print(f'Full ballot tie; {", ".join([self.movies[idx] for idx in indicesToCheck])}')
+                    self.tie = True
+                    if not self.quiet:
+                        print(f'Full ballot tie; {", ".join([self.movies[idx] for idx in indicesToCheck])}')
                     randIndex = randint(0,len(indicesToCheck)-1)
-                    print(f'{self.movies[randIndex]} has been randomly chosen to drop')
+                    if not self.quiet:
+                        print(f'{self.movies[randIndex]} has been randomly chosen to drop')
                     self.shift_first_votes(indicesToCheck[randIndex])
                     if reorder:
                         self.maxVote -= 1
                         self.reorder_ballots()
-        print(f'\nWinner is: {self.movies[0]}')
+        print(f'Winner is: {self.movies[0]}{"*" if self.tie else ""}\n')
 
 def main():
     parser = argparse.ArgumentParser(description='Perform runoff vote calculations for movie night')
+    parser.add_argument('-f','--full',help='calculate all six types of ballot (all, all reorder, slot 1, slot 1 reorder, slot 2, slot 2 reorder) at once',action='store_true')
     parser.add_argument('-s','--slot',help='0 = all ballots, 1 = first slot only, 2 = second slot only',type=int, default=0)
     parser.add_argument('-r','--reorder_votes',help='after a movie is removed, reorder the ballot votes to the lowest possible numbers (i.e. [1,2,4,5,7] -> [1,2,3,4,5])',action='store_true')
     args = parser.parse_args()
@@ -125,11 +136,36 @@ def main():
     root = tk.Tk()
     root.withdraw()
     filepath = askopenfilename()
-    slotPrint = "All" if args.slot == 0 else "First Slot" if args.slot == 1 else "Second Slot"
-    print(f'\n~~~~~ Calculating Runoff for {slotPrint} Ballots ~~~~~')
-    r = Runoff(filepath)
-    r.runoff(args.slot,args.reorder_votes)
-    print(f'~~~~~ Finished {slotPrint} Ballots ~~~~~')
+    if (args.full):
+        print(f'~~~~~ All Ballots ~~~~~')
+        allRunoff = Runoff(filepath,True)
+        allRunoff.runoff(0,False)
+
+        print(f'~~~~~ All Ballots Reordered ~~~~~')
+        allRunoffReorder = Runoff(filepath,True)
+        allRunoffReorder.runoff(0,True)
+
+        print(f'~~~~~ First Slot Ballots ~~~~~')
+        firstSlot = Runoff(filepath,True)
+        firstSlot.runoff(1,False)
+
+        print(f'~~~~~ First Slot Ballots Reordered ~~~~~')
+        firstSlotReorder = Runoff(filepath,True)
+        firstSlotReorder.runoff(1,True)
+
+        print(f'~~~~~ Second Slot Ballots ~~~~~')
+        secondSlot = Runoff(filepath,True)
+        secondSlot.runoff(2,False)
+
+        print(f'~~~~~ Second Slot Ballots Reordered ~~~~~')
+        secondSlotReorder = Runoff(filepath,True)
+        secondSlotReorder.runoff(2,True)
+    else:
+        slotPrint = "All" if args.slot == 0 else "First Slot" if args.slot == 1 else "Second Slot"
+        print(f'\n~~~~~ Calculating Runoff for {slotPrint} Ballots ~~~~~')
+        r = Runoff(filepath,False)
+        r.runoff(args.slot,args.reorder_votes)
+        print(f'~~~~~ Finished {slotPrint} Ballots ~~~~~')
 
 def get_next_highest_in_array(start,arr):
     nextHighest = sys.maxsize
