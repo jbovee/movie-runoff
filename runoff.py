@@ -119,7 +119,7 @@ class Runoff:
                         print(f'Full ballot tie; {", ".join([self.movies[idx] for idx in indicesToCheck])}')
                     randIndex = randint(0,len(indicesToCheck)-1)
                     if not self.quiet:
-                        print(f'{self.movies[randIndex]} has been randomly chosen to drop')
+                        print(f'{self.movies[indicesToCheck[randIndex]]} has been randomly chosen to drop')
                     self.shift_first_votes(indicesToCheck[randIndex])
                     if reorder:
                         self.maxVote -= 1
