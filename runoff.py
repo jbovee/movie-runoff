@@ -9,9 +9,8 @@ from zipfile import ZipFile
 from tkinter.filedialog import askopenfilename
 
 class Ballot:
-    def __init__(self, slot, votes):
+    def __init__(self, votes):
         self.id = id
-        self.slot = 1 if 'First' in slot else 2
         self.votes = votes
 
 class Runoff:
@@ -29,9 +28,9 @@ class Runoff:
         zipname = zipcsv.namelist()[0]
         with io.StringIO(zipcsv.read(zipname).decode('utf-8')) as csvfile:
             reader = csv.reader(csvfile)
-            self.movies = [re.search(r'\[(.+)\]', header).group(1) for header in reader.__next__()[2:]]
+            self.movies = [re.search(r'\[(.+)\]', header).group(1) for header in reader.__next__()[1:]]
             for ballot in list(reader):
-                self.ballots.append(Ballot(ballot[1],[int(val) if val != '' else -1 for val in ballot[2:]]))
+                self.ballots.append(Ballot([int(val) if val != '' else -1 for val in ballot[1:]]))
     
     def count_num_votes_for_movie(self,voteNum,movieIndex):
         return sum([1 for ballot in self.ballots if ballot.votes[movieIndex] == voteNum])
@@ -84,11 +83,7 @@ class Runoff:
                 ballot.votes[idxToSwap] = i + 1
 
     
-    def runoff(self,slot,reorder):
-        if slot == 1:
-            self.ballots = [ballot for ballot in self.ballots if ballot.slot == 1]
-        elif slot == 2:
-            self.ballots = [ballot for ballot in self.ballots if ballot.slot == 2]
+    def runoff(self,reorder):
         if not self.quiet:
             self.print_movies()
             self.print_ballots()
@@ -128,45 +123,20 @@ class Runoff:
 
 def main():
     parser = argparse.ArgumentParser(description='Perform runoff vote calculations for movie night')
-    parser.add_argument('-f','--full',help='calculate all six types of ballot (all, all reorder, slot 1, slot 1 reorder, slot 2, slot 2 reorder) at once',action='store_true')
     parser.add_argument('-q','--quiet',help='ignore all print statements except the one for the winner',action='store_true')
-    parser.add_argument('-s','--slot',help='0 = all ballots, 1 = first slot only, 2 = second slot only',type=int, default=0)
     parser.add_argument('-r','--reorder_votes',help='after a movie is removed, reorder the ballot votes to the lowest possible numbers (i.e. [1,2,4,5,7] -> [1,2,3,4,5])',action='store_true')
     args = parser.parse_args()
 
     root = tk.Tk()
     root.withdraw()
     filepath = askopenfilename()
-    if (args.full):
-        print(f'~~~~~ All Ballots ~~~~~')
-        allRunoff = Runoff(filepath,args.quiet)
-        allRunoff.runoff(0,False)
+    print(f'~~~~~ All Ballots ~~~~~')
+    allRunoff = Runoff(filepath,args.quiet)
+    allRunoff.runoff(False)
 
-        print(f'~~~~~ All Ballots Reordered ~~~~~')
-        allRunoffReorder = Runoff(filepath,args.quiet)
-        allRunoffReorder.runoff(0,True)
-
-        print(f'~~~~~ First Slot Ballots ~~~~~')
-        firstSlot = Runoff(filepath,args.quiet)
-        firstSlot.runoff(1,False)
-
-        print(f'~~~~~ First Slot Ballots Reordered ~~~~~')
-        firstSlotReorder = Runoff(filepath,args.quiet)
-        firstSlotReorder.runoff(1,True)
-
-        print(f'~~~~~ Second Slot Ballots ~~~~~')
-        secondSlot = Runoff(filepath,args.quiet)
-        secondSlot.runoff(2,False)
-
-        print(f'~~~~~ Second Slot Ballots Reordered ~~~~~')
-        secondSlotReorder = Runoff(filepath,args.quiet)
-        secondSlotReorder.runoff(2,True)
-    else:
-        slotPrint = "All" if args.slot == 0 else "First Slot" if args.slot == 1 else "Second Slot"
-        print(f'\n~~~~~ Calculating Runoff for {slotPrint} Ballots ~~~~~')
-        r = Runoff(filepath,args.quiet)
-        r.runoff(args.slot,args.reorder_votes)
-        print(f'~~~~~ Finished {slotPrint} Ballots ~~~~~')
+    print(f'~~~~~ All Ballots Reordered ~~~~~')
+    allRunoffReorder = Runoff(filepath,args.quiet)
+    allRunoffReorder.runoff(True)
 
 def get_next_highest_in_array(start,arr):
     nextHighest = sys.maxsize
