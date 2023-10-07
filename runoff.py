@@ -1,36 +1,35 @@
-import io
 import re
-import csv
 import sys
 import argparse
-import tkinter as tk
 from random import randint
-from zipfile import ZipFile
-from tkinter.filedialog import askopenfilename
+from gform_csvzip import acquire_file, parse_file
 
 class Ballot:
+    total_ballots = 0
+
     def __init__(self, votes):
-        self.id = id
+        self.id = Ballot.total_ballots
+        Ballot.total_ballots += 1
         self.votes = votes
 
+    def __repr__(self) -> str:
+        return f'Ballot{self.id}[{self.votes}]'
+    
 class Runoff:
     def __init__(self, filepath, quiet):
         self.lowest = 0
         self.movies = []
         self.ballots = []
-        self.parseFile(filepath)
+        self.file_contents = parse_file(filepath)
+        self.load_ballots()
         self.maxVote = len(self.movies)
         self.quiet = quiet
         self.tie = False
     
-    def parseFile(self, filepath):
-        zipcsv = ZipFile(filepath)
-        zipname = zipcsv.namelist()[0]
-        with io.StringIO(zipcsv.read(zipname).decode('utf-8')) as csvfile:
-            reader = csv.reader(csvfile)
-            self.movies = [re.search(r'\[(.+)\]', header).group(1) for header in reader.__next__()[1:]]
-            for ballot in list(reader):
-                self.ballots.append(Ballot([int(val) if val != '' else -1 for val in ballot[1:]]))
+    def load_ballots(self):
+        self.movies = [re.search(r'\[(.+)\]', movie).group(1) for movie in self.file_contents[0][1:]]
+        for ballot in list(self.file_contents[1:]):
+            self.ballots.append(Ballot([int(val) if val != '' else -1 for val in ballot[1:]]))
     
     def count_num_votes_for_movie(self,voteNum,movieIndex):
         return sum([1 for ballot in self.ballots if ballot.votes[movieIndex] == voteNum])
@@ -125,11 +124,10 @@ def main():
     parser = argparse.ArgumentParser(description='Perform runoff vote calculations for movie night')
     parser.add_argument('-q','--quiet',help='ignore all print statements except the one for the winner',action='store_true')
     parser.add_argument('-r','--reorder_votes',help='after a movie is removed, reorder the ballot votes to the lowest possible numbers (i.e. [1,2,4,5,7] -> [1,2,3,4,5])',action='store_true')
+    parser.add_argument('-s','--select',help='select a file instead of using the most recent expected filename',action='store_true')
     args = parser.parse_args()
 
-    root = tk.Tk()
-    root.withdraw()
-    filepath = askopenfilename()
+    filepath = acquire_file(args.select, 'Runoff Votes', path='exports/')
     print(f'~~~~~ All Ballots ~~~~~')
     allRunoff = Runoff(filepath,args.quiet)
     allRunoff.runoff(False)
