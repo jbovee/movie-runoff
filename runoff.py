@@ -127,7 +127,7 @@ def main():
     parser.add_argument('-s','--select',help='select a file instead of using the most recent expected filename',action='store_true')
     args = parser.parse_args()
 
-    filepath = acquire_file(args.select, 'Runoff Votes', path='exports/')
+    filepath = acquire_file(args.select, 'Runoff Votes', path='ballots/')
     print(f'~~~~~ All Ballots ~~~~~')
     allRunoff = Runoff(filepath,args.quiet)
     allRunoff.runoff(False)

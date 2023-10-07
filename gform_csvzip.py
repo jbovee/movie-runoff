@@ -9,8 +9,7 @@ from tkinter.filedialog import askopenfilename
 def acquire_file(manual_select, pattern, path = ''):
     '''select a .csv.zip file from Google Forms either manually, or by creation date.'''
     if manual_select is False:
-        files = glob.glob(f'{path}{pattern}.csv*.zip')
-        return max(files, key=os.path.getctime)
+        return max(glob.glob(f'{path}{pattern}.csv*.zip'), key=os.path.getctime)
     else:
         root = tk.Tk()
         root.withdraw()
