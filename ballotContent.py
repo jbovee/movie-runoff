@@ -30,7 +30,7 @@ def main():
 
     output = []
     output.append(', '.join([suggestion['title'] for suggestion in suggestions]))
-    output.append('\n\n'.join(['{} - {}{}'.format(suggestion['title'], suggestion['synopsis'], '(notes: {})'.format(suggestion['notes']) if suggestion['notes'] else "") for suggestion in suggestions]))
+    output.append('\n\n'.join(['{} - {}{}'.format(suggestion['title'], suggestion['synopsis'], ' (notes: {})'.format(suggestion['notes']) if suggestion['notes'] else "") for suggestion in suggestions]))
     output.append('\n'.join(['{} ({}, {})'.format(suggestion['title'], suggestion['release'], runtimeToReadable(suggestion['runtime'])) for suggestion in suggestions]))
     output = '\n\n\n'.join(output)
     with open('latestBallot.txt', 'w', encoding='utf-8') as outfile:
