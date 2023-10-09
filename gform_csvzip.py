@@ -19,6 +19,8 @@ def parse_file(filepath):
     '''produce a nested list from a csv.zip export from Google Forms.'''
     with ZipFile(filepath, 'r') as zipfile:
         with zipfile.open(zipfile.namelist()[0], 'r') as csvfile:
-            reader = csv.reader(
-                io.TextIOWrapper(csvfile, 'utf-8'))
-            return list(reader)
+            reader = csv.DictReader(io.TextIOWrapper(csvfile, 'utf-8')) # Dict form could be of use later
+            suggestions = []
+            for entry in list(reader):
+                suggestions.append(entry.values())
+            return suggestions
