@@ -2,7 +2,8 @@
 env
 .venv
 __*
-example\ votes
+example\votes
 exports
-suggestions
-ballots
+*.zip
+specials/*
+.python-version
