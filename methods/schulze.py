@@ -81,12 +81,17 @@ class SchulzeMethod(VotingMethod):
 
         # Build losers list from remaining candidates
         losers = []
+        winners_flat = []
+        for winner in winners:
+            if isinstance(winner, list):
+                winners_flat.extend(winner)  # Add all tied candidates
+            else:
+                winners_flat.append(winner)
+
         for score in scores:
             candidates = score_groups[score]
             for candidate in candidates:
-                if candidate not in [
-                    c if isinstance(c, str) else c[0] for c in winners
-                ]:
+                if candidate not in winners_flat:
                     losers.append(candidate)
 
         return winners, losers

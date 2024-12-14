@@ -25,21 +25,24 @@ class Election:
         self.tie = voting_method.tie
 
         # Print results
+        winner_number = 1
         for i, winner in enumerate(self.winners):
             if isinstance(winner, list):
-                print(
-                    f'Tie for {"Winner" if i == 0 else f"#{i+1}"}: {", ".join(winner)}*'
-                )
+                for w in winner:
+                    print(f'{"Winner: " if i == 0 else f"*#{i+1}: ":>8}{w}')
+                    winner_number += 1
             else:
-                print(f'{"Winner" if i == 0 else f"{f"#{i+1}":>6}"}: {winner}')
-
+                print(f'{"Winner: " if i == 0 else f"#{winner_number}: ":>8}{winner}')
+                winner_number += 1
+        if self.tie:
+            print("\n* indicates a tie")
         if self.show_losers and self.losers:
             print("\nEliminated:")
-            for i, loser in enumerate(self.losers, start=len(self.winners) + 1):
+            for loser in self.losers:
                 if isinstance(loser, list):
-                    print(f'{f"#{i}":>6}: {", ".join(loser)}* (tied)')
+                    print(f'{" ":>8}{", ".join(loser)}* (tied)')
                 else:
-                    print(f'{f"#{i}":>6}: {loser}')
+                    print(f'{" ":>8}{loser}')
         print()
 
 
