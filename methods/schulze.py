@@ -1,4 +1,4 @@
-from methods.method_factory import VotingMethod
+from .voting_method import VotingMethod
 
 
 class SchulzeMethod(VotingMethod):

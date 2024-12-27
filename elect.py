@@ -1,7 +1,6 @@
 import argparse
-from methods.method_factory import VotingMethodFactory
-from domain.ballot import Ballot
-from domain.file_utils import acquire_file, parse_file
+from methods import VotingMethodFactory
+from domain import Ballot, acquire_file, parse_file
 
 
 class Election:

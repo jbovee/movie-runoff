@@ -1,7 +1,7 @@
 import sys
 from random import randint
-from methods.method_factory import VotingMethod
-from domain.ballot import Ballot
+from .voting_method import VotingMethod
+from domain import Ballot
 
 
 class InstantRunoffMethod(VotingMethod):
