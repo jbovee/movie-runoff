@@ -1,3 +1,4 @@
+import os
 import argparse
 from domain.file_utils import acquire_file, parse_file
 
@@ -5,8 +6,12 @@ from domain.file_utils import acquire_file, parse_file
 class Suggest:
     def __init__(self, args) -> None:
         self.args = args
+        cwd = os.getcwd()
+        suggestions_dir = os.path.join(cwd,"suggestions")
+        if not os.path.exists(suggestions_dir):
+            print(f"{suggestions_dir} doesn't exist. Creating now")
         self.filepath = acquire_file(
-            args.select, "Suggest a Movie", path="suggestions/"
+            args.select, "Suggest a Movie", path=suggestions_dir
         )
         self.file_contents = parse_file(self.filepath)
         self.parse_suggestions()
@@ -14,7 +19,11 @@ class Suggest:
 
     def export(self):
         if self.args.outfile:
-            with open("exports/.latestBallot.txt", "w", encoding="utf-8") as outfile:
+            cwd = os.getcwd()
+            exports_dir = os.path.join(cwd,"exports")
+            if not os.path.exists(exports_dir):
+                os.mkdir(likes_dir)
+            with open(os.path.join(exports_dir,".latestBallot.txt"), "w", encoding="utf-8") as outfile:
                 outfile.write(str(self))
         else:
             print(self)

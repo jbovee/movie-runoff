@@ -1,3 +1,4 @@
+import os
 import argparse
 from methods import VotingMethodFactory
 from domain import Ballot, acquire_file, parse_file
@@ -85,7 +86,11 @@ def main():
     )
     args = parser.parse_args()
 
-    filepath = acquire_file(args.select, "Runoff Votes", path="ballots/")
+    cwd = os.getcwd()
+    ballots_dir = os.path.join(cwd,"ballots")
+    if not os.path.exists(ballots_dir) and not args.select:
+        print(f"{ballots_dir} doesn't exist. Creating now")
+    filepath = acquire_file(args.select, "Runoff Votes", path=ballots_dir)
 
     election = Election(filepath, **vars(args))
     election.calculate()

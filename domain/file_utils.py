@@ -11,6 +11,8 @@ def acquire_file(manual_select, pattern, path=""):
     """select a .csv.zip file from Google Forms either manually, or by creation date."""
     if manual_select is False:
         files = glob.glob(f"{path}{pattern}.csv*.zip")
+        if not files:
+            raise FileNotFoundError(f"No files found in {path}")
         return max(files, key=os.path.getctime)
     else:
         root = tk.Tk()
