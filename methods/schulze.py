@@ -2,13 +2,41 @@ from .voting_method import VotingMethod
 
 
 class SchulzeMethod(VotingMethod):
+    """
+    Implementation of the Schulze voting method, also known as the Beatpath method.
+
+    This method determines winners by:
+    1. Computing pairwise preferences between all candidates
+    2. Finding the strongest paths between candidates using the Floyd-Warshall algorithm
+    3. Ranking candidates based on their overall victory strength
+
+    Attributes:
+        n (int): Number of candidates/movies
+        d (list): 2D matrix storing direct pairwise preferences
+        p (list): 2D matrix storing strongest paths between candidates
+    """
+
     def __init__(self, movies, ballots, **kwargs):
+        """
+        Initialize the Schulze method calculator.
+
+        Args:
+            movies (list): List of movie candidates
+            ballots (list): List of Ballot objects containing voter preferences
+            **kwargs: Additional arguments passed to parent class
+        """
         super().__init__(movies, ballots, **kwargs)
         self.n = len(movies)
         self.d = [[0 for i in range(self.n)] for j in range(self.n)]
         self.p = [[0 for i in range(self.n)] for j in range(self.n)]
 
     def score_pairwise(self):
+        """
+        Calculate direct pairwise preferences between all candidates.
+
+        For each pair of candidates (i,j), counts how many voters preferred i over j
+        by comparing their rankings. Results are stored in the d matrix.
+        """
         # For each pair of candidates, count how many voters prefer i over j
         for ballot in self.ballots:
             for i in range(self.n):
@@ -18,6 +46,13 @@ class SchulzeMethod(VotingMethod):
                             self.d[i][j] += 1
 
     def compute_paths(self):
+        """
+        Calculate the strongest paths between all pairs of candidates.
+
+        Uses the Floyd-Warshall algorithm to find the strongest path between each
+        pair of candidates. A path's strength is equal to the minimum pairwise
+        victory along that path. Results are stored in the p matrix.
+        """
         # Find strongest paths between each pair using Floyd-Warshall algorithm
         for i in range(self.n):
             for j in range(self.n):
@@ -38,11 +73,15 @@ class SchulzeMethod(VotingMethod):
 
     def get_strength_grid(self):
         """
-        Returns a formatted string showing the pairwise strength scores between candidates.
-        For each cell [i][j], shows how many voters preferred candidate i over candidate j.
-        Numbers are color coded:
-        - Green: more voters preferred i over j
-        - Red: more voters preferred j over i
+        Generate a formatted string showing pairwise preference counts.
+
+        The grid shows how many voters preferred candidate i over candidate j
+        for each pair. Values are color-coded:
+        - Green: More voters preferred row candidate over column candidate
+        - Red: More voters preferred column candidate over row candidate
+
+        Returns:
+            str: Formatted string containing the colored strength grid
         """
         # ANSI color codes
         GREEN = "\033[92m"
@@ -80,8 +119,17 @@ class SchulzeMethod(VotingMethod):
 
     def get_preference_order(self, winners, losers):
         """
-        Returns a formatted string showing the final preference order using letter designations.
-        Movies at the same preference level (ties) are shown in brackets and colored blue.
+        Generate a formatted string showing the final preference ordering.
+
+        Candidates are represented by letters (A, B, C, etc.). Tied candidates
+        are grouped in blue-colored brackets.
+
+        Args:
+            winners (list): List of winning candidates (may include nested lists for ties)
+            losers (list): List of losing candidates in preference order
+
+        Returns:
+            str: Formatted string showing the complete preference order
         """
         # ANSI color codes
         BLUE = "\033[94m"
@@ -105,6 +153,21 @@ class SchulzeMethod(VotingMethod):
         return result + "\n"
 
     def process_ballots(self):
+        """
+        Process all ballots to determine winners and losers using the Schulze method.
+
+        The method:
+        1. Calculates pairwise preferences
+        2. Computes strongest paths
+        3. Determines victory strength for each candidate
+        4. Groups candidates by score to handle ties
+        5. Separates winners and losers based on victory strength
+
+        Returns:
+            tuple: (winners, losers) where:
+                - winners: List of winning candidates (or nested lists for ties)
+                - losers: List of remaining candidates in order of preference
+        """
         self.score_pairwise()
         self.compute_paths()
 
@@ -167,6 +230,16 @@ class SchulzeMethod(VotingMethod):
         return winners, losers
 
     def get_debug(self, winners, losers):
+        """
+        Generate debug information combining the strength grid and preference order.
+
+        Args:
+            winners (list): List of winning candidates
+            losers (list): List of losing candidates
+
+        Returns:
+            str: Combined debug information as a formatted string
+        """
         return "\n".join(
             [self.get_strength_grid(), self.get_preference_order(winners, losers)]
         )

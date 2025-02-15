@@ -21,5 +21,14 @@ class VotingMethod(ABC):
 
     @abstractmethod
     def get_debug(self):
-        """Returns human readable debug information to validate results. Accepts a list of winners, and a list of losers in stanard form."""
+        """Returns human readable debug information to validate voting results.
+
+        This method should return a string containing detailed information about the voting process
+        and results that can be used to verify the correctness of the outcome. The information
+        should include vote counts, elimination order, and any other method-specific details
+        that would help validate the results.
+
+        Returns:
+            str: A formatted string containing the debug information
+        """
         raise NotImplementedError("Subclass must implement get_debug method")
