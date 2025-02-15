@@ -18,3 +18,8 @@ class VotingMethod(ABC):
             - losers is a list of remaining candidates in order
         """
         raise NotImplementedError("Subclass must implement process_ballots method")
+
+    @abstractmethod
+    def get_debug(self):
+        """Returns human readable debug information to validate results. Accepts a list of winners, and a list of losers in stanard form."""
+        raise NotImplementedError("Subclass must implement get_debug method")

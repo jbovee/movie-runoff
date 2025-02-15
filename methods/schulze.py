@@ -36,6 +36,74 @@ class SchulzeMethod(VotingMethod):
                                 self.p[j][k], min(self.p[j][i], self.p[i][k])
                             )
 
+    def get_strength_grid(self):
+        """
+        Returns a formatted string showing the pairwise strength scores between candidates.
+        For each cell [i][j], shows how many voters preferred candidate i over candidate j.
+        Numbers are color coded:
+        - Green: more voters preferred i over j
+        - Red: more voters preferred j over i
+        """
+        # ANSI color codes
+        GREEN = "\033[92m"
+        RED = "\033[91m"
+        RESET = "\033[0m"
+
+        lines = []
+        lines.append("Pairwise Strength Grid:")
+
+        # Header row with movie letters
+        header = " " * 3
+        for i in range(self.n):
+            header += f"{chr(65 + i):>3}"
+        lines.append(header)
+        lines.append("   " + "-" * self.n * 3)
+
+        # Each row with strength scores
+        for i in range(self.n):
+            row = f"{chr(65 + i)} |"
+            for j in range(self.n):
+                if i == j:
+                    row += f"{'-':>3}"
+                else:
+                    if self.d[i][j] > self.d[j][i]:
+                        color = GREEN
+                    elif self.d[i][j] < self.d[j][i]:
+                        color = RED
+                    else:
+                        color = ""
+                    row += f"{color}{self.d[i][j]:3}{RESET}"
+            row += f" | {chr(65 + i)}: {self.movies[i]}"
+            lines.append(row)
+
+        return "\n".join(lines) + "\n"
+
+    def get_preference_order(self, winners, losers):
+        """
+        Returns a formatted string showing the final preference order using letter designations.
+        Movies at the same preference level (ties) are shown in brackets and colored blue.
+        """
+        # ANSI color codes
+        BLUE = "\033[94m"
+        RESET = "\033[0m"
+
+        result = "Preference Order: "
+
+        for winner in winners:
+            if isinstance(winner, list):
+                # Handle tied winners
+                tied_letters = [chr(65 + self.movies.index(movie)) for movie in winner]
+                result += f"{BLUE}[{''.join(sorted(tied_letters))}]{RESET}"
+            else:
+                # Single winner
+                result += chr(65 + self.movies.index(winner))
+
+        # Process losers
+        for loser in losers:
+            result += chr(65 + self.movies.index(loser))
+
+        return result + "\n"
+
     def process_ballots(self):
         self.score_pairwise()
         self.compute_paths()
@@ -43,13 +111,15 @@ class SchulzeMethod(VotingMethod):
         # Calculate strength of victory for each candidate
         strength_scores = []
         for i in range(self.n):
-            wins = 0
+            victory_margin_sum = 0
             for j in range(self.n):
-                if i != j and self.p[i][j] > self.p[j][i]:
-                    wins += 1
-            strength_scores.append((wins, i))
+                if i != j:
+                    # Add the margin of victory (can be negative if lost)
+                    margin = self.p[i][j] - self.p[j][i]
+                    victory_margin_sum += margin
+            strength_scores.append((victory_margin_sum, i))
 
-        # Sort by number of wins (highest to lowest)
+        # Sort by victory margin sum (highest to lowest)
         strength_scores.sort(reverse=True)
 
         # Group candidates by score to find ties
@@ -95,3 +165,8 @@ class SchulzeMethod(VotingMethod):
                     losers.append(candidate)
 
         return winners, losers
+
+    def get_debug(self, winners, losers):
+        return "\n".join(
+            [self.get_strength_grid(), self.get_preference_order(winners, losers)]
+        )

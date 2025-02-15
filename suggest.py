@@ -7,7 +7,7 @@ class Suggest:
     def __init__(self, args) -> None:
         self.args = args
         cwd = os.getcwd()
-        suggestions_dir = os.path.join(cwd,"suggestions")
+        suggestions_dir = os.path.join(cwd, "suggestions")
         if not os.path.exists(suggestions_dir):
             print(f"{suggestions_dir} doesn't exist. Creating now")
         self.filepath = acquire_file(
@@ -20,10 +20,12 @@ class Suggest:
     def export(self):
         if self.args.outfile:
             cwd = os.getcwd()
-            exports_dir = os.path.join(cwd,"exports")
+            exports_dir = os.path.join(cwd, "exports")
             if not os.path.exists(exports_dir):
                 os.mkdir(likes_dir)
-            with open(os.path.join(exports_dir,".latestBallot.txt"), "w", encoding="utf-8") as outfile:
+            with open(
+                os.path.join(exports_dir, ".latestBallot.txt"), "w", encoding="utf-8"
+            ) as outfile:
                 outfile.write(str(self))
         else:
             print(self)
