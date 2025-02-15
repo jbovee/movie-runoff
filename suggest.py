@@ -22,7 +22,7 @@ class Suggest:
             cwd = os.getcwd()
             exports_dir = os.path.join(cwd, "exports")
             if not os.path.exists(exports_dir):
-                os.mkdir(likes_dir)
+                os.mkdir(exports_dir)
             with open(
                 os.path.join(exports_dir, ".latestBallot.txt"), "w", encoding="utf-8"
             ) as outfile:
