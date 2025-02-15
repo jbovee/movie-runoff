@@ -117,16 +117,12 @@ class SchulzeMethod(VotingMethod):
 
         return "\n".join(lines) + "\n"
 
-    def get_preference_order(self, winners, losers):
+    def get_preference_order(self):
         """
-        Generate a formatted string showing the final preference ordering.
+        Generate a formatted string showing the final preference ordering based on the p matrix.
 
         Candidates are represented by letters (A, B, C, etc.). Tied candidates
         are grouped in blue-colored brackets.
-
-        Args:
-            winners (list): List of winning candidates (may include nested lists for ties)
-            losers (list): List of losing candidates in preference order
 
         Returns:
             str: Formatted string showing the complete preference order
@@ -135,20 +131,51 @@ class SchulzeMethod(VotingMethod):
         BLUE = "\033[94m"
         RESET = "\033[0m"
 
+        # Calculate victory strength for each candidate
+        strength_scores = []
+        for i in range(self.n):
+            victory_margin_sum = 0
+            for j in range(self.n):
+                if i != j:
+                    margin = self.p[i][j] - self.p[j][i]
+                    victory_margin_sum += margin
+            strength_scores.append((victory_margin_sum, i))
+
+        # Group candidates by score to find ties
+        score_groups = {}
+        for score, idx in strength_scores:
+            if score not in score_groups:
+                score_groups[score] = []
+            score_groups[score].append(self.movies[idx])
+
+        # Build result string
         result = "Preference Order: "
+        scores = sorted(score_groups.keys(), reverse=True)
 
-        for winner in winners:
-            if isinstance(winner, list):
-                # Handle tied winners
-                tied_letters = [chr(65 + self.movies.index(movie)) for movie in winner]
-                result += f"{BLUE}[{''.join(sorted(tied_letters))}]{RESET}"
+        # Process candidates in order of strength
+        remaining_winners = self.num_winners
+        for score in scores:
+            candidates = score_groups[score]
+            if len(candidates) > 1:
+                # Handle ties
+                if remaining_winners > 0:
+                    tied_letters = [
+                        chr(65 + self.movies.index(movie)) for movie in candidates
+                    ]
+                    result += f"{BLUE}[{''.join(sorted(tied_letters))}]{RESET}"
+                    remaining_winners = 0
+                else:
+                    # Add remaining tied candidates without brackets
+                    for candidate in candidates:
+                        result += chr(65 + self.movies.index(candidate))
             else:
-                # Single winner
-                result += chr(65 + self.movies.index(winner))
-
-        # Process losers
-        for loser in losers:
-            result += chr(65 + self.movies.index(loser))
+                # Single candidate
+                candidate = candidates[0]
+                if remaining_winners > 0:
+                    result += chr(65 + self.movies.index(candidate))
+                    remaining_winners -= 1
+                else:
+                    result += chr(65 + self.movies.index(candidate))
 
         return result + "\n"
 
@@ -229,17 +256,15 @@ class SchulzeMethod(VotingMethod):
 
         return winners, losers
 
-    def get_debug(self, winners, losers):
+    def get_debug(self):
         """
         Generate debug information combining the strength grid and preference order.
 
         Args:
-            winners (list): List of winning candidates
-            losers (list): List of losing candidates
+            winners (list): List of winning candidates (unused)
+            losers (list): List of losing candidates (unused)
 
         Returns:
             str: Combined debug information as a formatted string
         """
-        return "\n".join(
-            [self.get_strength_grid(), self.get_preference_order(winners, losers)]
-        )
+        return "\n".join([self.get_strength_grid(), self.get_preference_order()])

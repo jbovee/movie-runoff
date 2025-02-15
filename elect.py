@@ -52,7 +52,7 @@ class Election:
                     print(f"{' ':>8}{loser}")
         print()
         if self.debug:
-            print(self.voting_method.get_debug(self.winners, self.losers))
+            print(self.voting_method.get_debug())
 
 
 def main():
