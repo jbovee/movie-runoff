@@ -29,6 +29,7 @@ class SchulzeMethod(VotingMethod):
         self.n = len(movies)
         self.d = [[0 for i in range(self.n)] for j in range(self.n)]
         self.p = [[0 for i in range(self.n)] for j in range(self.n)]
+        self.processed = False  # Flag to track if process_ballots has been run
 
     def score_pairwise(self):
         """
@@ -71,7 +72,7 @@ class SchulzeMethod(VotingMethod):
                                 self.p[j][k], min(self.p[j][i], self.p[i][k])
                             )
 
-    def get_strength_grid(self):
+    def _get_strength_grid(self):
         """
         Generate a formatted string showing pairwise preference counts.
 
@@ -117,7 +118,7 @@ class SchulzeMethod(VotingMethod):
 
         return "\n".join(lines) + "\n"
 
-    def get_preference_order(self):
+    def _get_preference_order(self):
         """
         Generate a formatted string showing the final preference ordering based on the p matrix.
 
@@ -131,51 +132,23 @@ class SchulzeMethod(VotingMethod):
         BLUE = "\033[94m"
         RESET = "\033[0m"
 
-        # Calculate victory strength for each candidate
-        strength_scores = []
-        for i in range(self.n):
-            victory_margin_sum = 0
-            for j in range(self.n):
-                if i != j:
-                    margin = self.p[i][j] - self.p[j][i]
-                    victory_margin_sum += margin
-            strength_scores.append((victory_margin_sum, i))
-
-        # Group candidates by score to find ties
-        score_groups = {}
-        for score, idx in strength_scores:
-            if score not in score_groups:
-                score_groups[score] = []
-            score_groups[score].append(self.movies[idx])
-
         # Build result string
         result = "Preference Order: "
-        scores = sorted(score_groups.keys(), reverse=True)
+        scores = sorted(self.score_groups.keys(), reverse=True)
 
         # Process candidates in order of strength
-        remaining_winners = self.num_winners
         for score in scores:
-            candidates = score_groups[score]
+            candidates = self.score_groups[score]
             if len(candidates) > 1:
-                # Handle ties
-                if remaining_winners > 0:
-                    tied_letters = [
-                        chr(65 + self.movies.index(movie)) for movie in candidates
-                    ]
-                    result += f"{BLUE}[{''.join(sorted(tied_letters))}]{RESET}"
-                    remaining_winners = 0
-                else:
-                    # Add remaining tied candidates without brackets
-                    for candidate in candidates:
-                        result += chr(65 + self.movies.index(candidate))
+                # Handle ties - always show in brackets
+                tied_letters = [
+                    chr(65 + self.movies.index(movie)) for movie in candidates
+                ]
+                result += f"{BLUE}[{''.join(sorted(tied_letters))}]{RESET}"
             else:
                 # Single candidate
                 candidate = candidates[0]
-                if remaining_winners > 0:
-                    result += chr(65 + self.movies.index(candidate))
-                    remaining_winners -= 1
-                else:
-                    result += chr(65 + self.movies.index(candidate))
+                result += chr(65 + self.movies.index(candidate))
 
         return result + "\n"
 
@@ -199,7 +172,7 @@ class SchulzeMethod(VotingMethod):
         self.compute_paths()
 
         # Calculate strength of victory for each candidate
-        strength_scores = []
+        self.strength_scores = []
         for i in range(self.n):
             victory_margin_sum = 0
             for j in range(self.n):
@@ -207,25 +180,25 @@ class SchulzeMethod(VotingMethod):
                     # Add the margin of victory (can be negative if lost)
                     margin = self.p[i][j] - self.p[j][i]
                     victory_margin_sum += margin
-            strength_scores.append((victory_margin_sum, i))
+            self.strength_scores.append((victory_margin_sum, i))
 
         # Sort by victory margin sum (highest to lowest)
-        strength_scores.sort(reverse=True)
+        self.strength_scores.sort(reverse=True)
 
         # Group candidates by score to find ties
-        score_groups = {}
-        for score, idx in strength_scores:
-            if score not in score_groups:
-                score_groups[score] = []
-            score_groups[score].append(self.movies[idx])
+        self.score_groups = {}
+        for score, idx in self.strength_scores:
+            if score not in self.score_groups:
+                self.score_groups[score] = []
+            self.score_groups[score].append(self.movies[idx])
 
         # Build winners list with ties represented as nested lists
         winners = []
         remaining_winners_needed = self.num_winners
-        scores = sorted(score_groups.keys(), reverse=True)
+        scores = sorted(self.score_groups.keys(), reverse=True)
 
         for score in scores:
-            candidates = score_groups[score]
+            candidates = self.score_groups[score]
             if len(candidates) == 1 and remaining_winners_needed > 0:
                 winners.append(candidates[0])
                 remaining_winners_needed -= 1
@@ -249,22 +222,23 @@ class SchulzeMethod(VotingMethod):
                 winners_flat.append(winner)
 
         for score in scores:
-            candidates = score_groups[score]
+            candidates = self.score_groups[score]
             for candidate in candidates:
                 if candidate not in winners_flat:
                     losers.append(candidate)
 
+        self.processed = True  # Set flag after processing
         return winners, losers
 
     def get_debug(self):
         """
         Generate debug information combining the strength grid and preference order.
-
-        Args:
-            winners (list): List of winning candidates (unused)
-            losers (list): List of losing candidates (unused)
+        Returns a warning if process_ballots hasn't been run first.
 
         Returns:
             str: Combined debug information as a formatted string
         """
-        return "\n".join([self.get_strength_grid(), self.get_preference_order()])
+        if not self.processed:
+            return "Warning: Must run process_ballots() before getting debug information.\n"
+
+        return "\n".join([self._get_strength_grid(), self._get_preference_order()])
