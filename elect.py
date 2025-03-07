@@ -10,29 +10,36 @@ class Election:
         self.movies, self.ballots = Ballot.load_from_file_contents(self.file_contents)
         self.quiet = kwargs.get("quiet", False)
         self.tie = False
-        self.method = kwargs.get("method", "schulze")
+        self.method_str = kwargs.get("method", "schulze")
         self.num_winners = kwargs.get("num_winners", 1)
         self.show_losers = kwargs.get("show_losers", True)
+        self.processed = False
+        self.debug = kwargs.get("debug", False)
         self.winners = []
         self.losers = []
-        print(f"~~~~~ Using {self.method.title()} Method ~~~~~")
+        print(f"~~~~~ Using {self.method_str.title()} Method ~~~~~")
+        self.voting_method = VotingMethodFactory.create_method(
+            self.method_str,
+            self.movies.copy(),
+            self.ballots,
+            num_winners=self.num_winners,
+        )
 
     def calculate(self):
-        voting_method = VotingMethodFactory.create_method(
-            self.method, self.movies.copy(), self.ballots, num_winners=self.num_winners
-        )
-        self.winners, self.losers = voting_method.process_ballots()
-        self.tie = voting_method.tie
+        self.winners, self.losers = self.voting_method.process_ballots()
+        self.tie = getattr(self.voting_method, "tie", False)
+        self.processed = True
 
+    def display_results(self):
         # Print results
         winner_number = 1
         for i, winner in enumerate(self.winners):
             if isinstance(winner, list):
                 for w in winner:
-                    print(f'{"Winner: " if i == 0 else f"*#{i+1}: ":>8}{w}')
+                    print(f"{'Winner: ' if i == 0 else f'*#{i + 1}: ':>8}{w}")
                     winner_number += 1
             else:
-                print(f'{"Winner: " if i == 0 else f"#{winner_number}: ":>8}{winner}')
+                print(f"{'Winner: ' if i == 0 else f'#{winner_number}: ':>8}{winner}")
                 winner_number += 1
         if self.tie:
             print("\n* indicates a tie")
@@ -40,10 +47,12 @@ class Election:
             print("\nEliminated:")
             for loser in self.losers:
                 if isinstance(loser, list):
-                    print(f'{" ":>8}{", ".join(loser)}* (tied)')
+                    print(f"{' ':>8}{', '.join(loser)}* (tied)")
                 else:
-                    print(f'{" ":>8}{loser}')
+                    print(f"{' ':>8}{loser}")
         print()
+        if self.debug:
+            print(self.voting_method.get_debug())
 
 
 def main():
@@ -84,16 +93,24 @@ def main():
     parser.add_argument(
         "-n", "--num_winners", help="number of winners to select", type=int, default=1
     )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        help="show the human readable debug output",
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     cwd = os.getcwd()
-    ballots_dir = os.path.join(cwd,"ballots")
+    ballots_dir = os.path.join(cwd, "ballots")
     if not os.path.exists(ballots_dir) and not args.select:
         print(f"{ballots_dir} doesn't exist. Creating now")
     filepath = acquire_file(args.select, "Runoff Votes", path=ballots_dir)
 
     election = Election(filepath, **vars(args))
     election.calculate()
+    election.display_results()
 
 
 if __name__ == "__main__":
